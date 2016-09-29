@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:batch="http://www.springframework.org/schema/batch"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch-2.1.xsd
+		http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+	
+	
+	<!--  Spring Batch  Properties 파일 읽어 들여서 상수화 시킴-->
+	<context:property-placeholder location="classpath:batch.properties" />
+
+	<!-- 어노테이션 스캔 범위 지정  -->
+	<context:component-scan base-package="com.kira.batch" />
+
+	
+	<!-- <jdbc:initialize-database data-source="dataSource">
+		<jdbc:script location="${batch.schema.script}" />
+	</jdbc:initialize-database>
+ 	-->
+	
+	<bean id="basicDataSource" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="${batch.jdbc.driver}"/>
+		<property name="url" value="${batch.jdbc.url}"/>
+		<property name="password" value="${batch.jdbc.password}"/>
+		<property name="username" value="${batch.jdbc.user}"></property>
+	</bean>
+	
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="basicDataSource"/>
+	</bean>
+	
+	<!-- <batch:job-repository id="jobRepository" /> -->
+	
+	<bean id="jobRepository" class="org.springframework.batch.core.repository.support.JobRepositoryFactoryBean">
+		<property name="dataSource" ref="basicDataSource"/>
+		<property name="transactionManager" ref="txManager"/>
+	</bean>
+	
+	<!-- 
+		기본적으로 SimpleJobLauncher는 Spring Framework에서 JobLanucher 의 구현체다
+	  	JobLauncher는 배치작업을 실행시키는 역할을 한다. 
+	  	Job과 Job Parameters를 이용하여 요청된 배치 작업을 수행한 후 JobExecution을 반환한다.
+	 -->
+	<bean id="jobLauncher" class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="jobRepository" ref="jobRepository"/>
+		<property name="taskExecutor">
+			<bean id ="simpleAsyncTaskExecutor" class="org.springframework.core.task.SimpleAsyncTaskExecutor"/>
+		</property>	
+	</bean>
+	
+	<import resource="classpath:/META-INF/spring/module-context.xml" />
+
+
+
+</beans>
